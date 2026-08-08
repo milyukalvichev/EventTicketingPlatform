@@ -1,0 +1,20 @@
+# Maven target folders
+**/target/
+*.jar
+*.war
+
+# IntelliJ IDEA settings
+.idea/
+*.iml
+*.iws
+
+# Eclipse settings
+.settings/
+.project
+.classpath
+
+# macOS files
+.DS_Store
+
+# Log files
+*.log
