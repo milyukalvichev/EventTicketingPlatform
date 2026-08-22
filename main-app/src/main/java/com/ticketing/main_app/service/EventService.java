@@ -53,4 +53,11 @@ public class EventService {
         Event event = new Event(dto.getTitle(), dto.getBasePrice(), dto.getEventDate(), venue);
         return eventRepository.save(event);
     }
+
+    public List<Event> searchEvents(String query) {
+        if (query == null || query.isBlank()) {
+            return getAllEvents();
+        }
+        return eventRepository.searchEvents(query.trim());
+    }
 }

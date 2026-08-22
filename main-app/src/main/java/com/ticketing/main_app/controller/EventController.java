@@ -1,6 +1,7 @@
 package com.ticketing.main_app.controller;
 
 import com.ticketing.main_app.dto.EventCreateDTO;
+import com.ticketing.main_app.model.Event;
 import com.ticketing.main_app.service.EventService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
@@ -19,9 +20,17 @@ public class EventController {
     }
 
     @GetMapping
-    public String listEvents(Model model) {
-        model.addAttribute("events", eventService.getAllEvents());
+    public String listEvents(@RequestParam(required = false) String search, Model model) {
+        model.addAttribute("events", eventService.searchEvents(search));
+        model.addAttribute("searchQuery", search != null ? search : "");
         return "events";
+    }
+
+    @GetMapping("/{id}")
+    public String eventDetails(@PathVariable Long id, Model model) {
+        Event event = eventService.getEventById(id);
+        model.addAttribute("event", event);
+        return "event-details";
     }
 
     @GetMapping("/new")
