@@ -13,6 +13,7 @@ import org.springframework.web.client.RestClient;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -59,7 +60,11 @@ public class TicketService {
         return new PromoEvaluationResult(basePrice, false, "Invalid promotional code.");
     }
 
-    public Ticket purchaseTicket(String username, Long eventId, String promoCode) {
+    public List<Ticket> purchaseTickets(String username, Long eventId, String promoCode, int quantity) {
+        if (quantity < 1 || quantity > 10) {
+            throw new IllegalArgumentException("Quantity must be between 1 and 10 tickets.");
+        }
+
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
         Event event = eventRepository.findById(eventId)
@@ -67,15 +72,19 @@ public class TicketService {
 
         PromoEvaluationResult result = evaluatePromo(event.getBasePrice(), promoCode);
 
-        Ticket ticket = new Ticket(
-                result.finalPrice(),
-                result.valid() ? promoCode.trim().toUpperCase() : null,
-                LocalDateTime.now(),
-                user,
-                event
-        );
+        List<Ticket> purchasedTickets = new ArrayList<>();
+        for (int i = 0; i < quantity; i++) {
+            Ticket ticket = new Ticket(
+                    result.finalPrice(),
+                    result.valid() ? promoCode.trim().toUpperCase() : null,
+                    LocalDateTime.now(),
+                    user,
+                    event
+            );
+            purchasedTickets.add(ticketRepository.save(ticket));
+        }
 
-        return ticketRepository.save(ticket);
+        return purchasedTickets;
     }
 
     public List<Ticket> getUserTickets(String username) {
@@ -85,4 +94,15 @@ public class TicketService {
     }
 
     public record PromoEvaluationResult(BigDecimal finalPrice, boolean valid, String message) {}
+
+    public void returnTicket(Long ticketId, String username) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new IllegalArgumentException("Ticket not found with ID: " + ticketId));
+
+        if (!ticket.getUser().getUsername().equals(username)) {
+            throw new IllegalArgumentException("You are not authorized to return this ticket.");
+        }
+
+        ticketRepository.delete(ticket);
+    }
 }

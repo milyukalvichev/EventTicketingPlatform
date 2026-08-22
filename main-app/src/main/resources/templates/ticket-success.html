@@ -10,22 +10,31 @@
 
 <div class="container py-5 text-center">
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-md-7">
             <div class="card shadow-sm border-0 p-4">
                 <div class="text-success mb-3" style="font-size: 4rem;">✓</div>
-                <h2 class="fw-bold text-dark mb-2">Ticket Confirmed!</h2>
-                <p class="text-muted mb-4">Your booking has been registered and verified.</p>
+                <h2 class="fw-bold text-dark mb-2">Order Confirmed!</h2>
+                <p class="text-muted mb-4">Your tickets have been issued and registered to your account.</p>
 
                 <div class="text-start bg-light p-3 rounded border mb-4">
-                    <p class="mb-1"><strong>Ticket ID:</strong> #<span th:text="${ticket.id}"></span></p>
-                    <p class="mb-1"><strong>Event:</strong> <span th:text="${ticket.event.title}"></span></p>
-                    <p class="mb-1"><strong>Price Paid:</strong> €<span th:text="${#numbers.formatDecimal(ticket.finalPrice, 1, 2)}"></span></p>
-                    <p class="mb-0" th:if="${ticket.promoCodeUsed}"><strong>Promo Code:</strong> <span class="badge bg-info text-dark" th:text="${ticket.promoCodeUsed}"></span></p>
+                    <p class="mb-2"><strong>Event:</strong> <span th:text="${tickets[0].event.title}"></span></p>
+                    <p class="mb-2"><strong>Venue:</strong> <span th:text="${tickets[0].event.venue.name + ' (' + tickets[0].event.venue.city + ')'}"></span></p>
+                    <p class="mb-2"><strong>Date:</strong> <span th:text="${#temporals.format(tickets[0].event.eventDate, 'MMM dd, yyyy - HH:mm')}"></span></p>
+                    <p class="mb-2"><strong>Quantity Purchased:</strong> <span class="badge bg-primary fs-6" th:text="${tickets.size()}"></span></p>
+                    <p class="mb-2"><strong>Total Paid:</strong> <span class="fw-bold text-success fs-5">€<span th:text="${#numbers.formatDecimal(totalPaid, 1, 2)}"></span></span></p>
+
+                    <hr>
+                    <h6 class="fw-bold text-dark mb-2">Issued Ticket ID(s):</h6>
+                    <ul class="list-inline mb-0">
+                        <li class="list-inline-item badge bg-dark me-1 mb-1 p-2" th:each="t : ${tickets}">
+                            Ticket #<span th:text="${t.id}"></span>
+                        </li>
+                    </ul>
                 </div>
 
-                <div class="d-grid gap-2">
-                    <a th:href="@{/tickets/my-tickets}" class="btn btn-primary fw-semibold">View All My Tickets</a>
-                    <a th:href="@{/events}" class="btn btn-outline-secondary">Back to Events</a>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a th:href="@{/tickets/my-tickets}" class="btn btn-primary fw-semibold px-4">View My Tickets</a>
+                    <a th:href="@{/events}" class="btn btn-outline-secondary px-4">Browse More Events</a>
                 </div>
             </div>
         </div>

@@ -10,6 +10,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 @Controller
 @RequestMapping("/tickets")
 public class TicketController {
@@ -25,13 +28,24 @@ public class TicketController {
     @GetMapping("/checkout/{eventId}")
     public String checkoutPage(@PathVariable Long eventId,
                                @RequestParam(required = false) String promoCode,
+                               @RequestParam(defaultValue = "1") int quantity,
                                Model model) {
         Event event = eventService.getEventById(eventId);
         TicketService.PromoEvaluationResult eval = ticketService.evaluatePromo(event.getBasePrice(), promoCode);
 
+        int validQty = Math.max(1, Math.min(10, quantity));
+        BigDecimal unitPrice = eval.finalPrice();
+        BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(validQty));
+        BigDecimal totalOriginalPrice = event.getBasePrice().multiply(BigDecimal.valueOf(validQty));
+        BigDecimal totalDiscount = totalOriginalPrice.subtract(totalPrice);
+
         model.addAttribute("event", event);
         model.addAttribute("promoCode", promoCode != null ? promoCode : "");
-        model.addAttribute("finalPrice", eval.finalPrice());
+        model.addAttribute("quantity", validQty);
+        model.addAttribute("unitPrice", unitPrice);
+        model.addAttribute("totalPrice", totalPrice);
+        model.addAttribute("totalOriginalPrice", totalOriginalPrice);
+        model.addAttribute("totalDiscount", totalDiscount);
         model.addAttribute("promoValid", eval.valid());
         model.addAttribute("promoMessage", eval.message());
         return "checkout";
@@ -40,11 +54,20 @@ public class TicketController {
     @PostMapping("/purchase")
     public String purchaseTicket(@RequestParam Long eventId,
                                  @RequestParam(required = false) String promoCode,
+                                 @RequestParam(defaultValue = "1") int quantity,
                                  @AuthenticationPrincipal UserDetails userDetails,
                                  Model model) {
-        Ticket ticket = ticketService.purchaseTicket(userDetails.getUsername(), eventId, promoCode);
-        model.addAttribute("ticket", ticket);
+        List<Ticket> tickets = ticketService.purchaseTickets(userDetails.getUsername(), eventId, promoCode, quantity);
+        model.addAttribute("tickets", tickets);
+        model.addAttribute("quantity", quantity);
+        model.addAttribute("totalPaid", tickets.stream().map(Ticket::getFinalPrice).reduce(BigDecimal.ZERO, BigDecimal::add));
         return "ticket-success";
+    }
+
+    @PostMapping("/return/{id}")
+    public String returnTicket(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+        ticketService.returnTicket(id, userDetails.getUsername());
+        return "redirect:/tickets/my-tickets?returned=true";
     }
 
     @GetMapping("/my-tickets")
