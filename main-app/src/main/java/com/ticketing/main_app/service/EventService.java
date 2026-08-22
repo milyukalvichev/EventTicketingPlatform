@@ -34,8 +34,21 @@ public class EventService {
     }
 
     public Event createEvent(EventCreateDTO dto) {
-        Venue venue = venueRepository.findById(dto.getVenueId())
-                .orElseThrow(() -> new IllegalArgumentException("Venue not found with ID: " + dto.getVenueId()));
+        Venue venue;
+
+        // If user typed custom venue info, save new venue
+        if (dto.getCustomVenueName() != null && !dto.getCustomVenueName().isBlank()) {
+            String city = (dto.getCustomVenueCity() != null && !dto.getCustomVenueCity().isBlank())
+                    ? dto.getCustomVenueCity() : "Sofia";
+            int capacity = (dto.getCustomVenueCapacity() != null && dto.getCustomVenueCapacity() > 0)
+                    ? dto.getCustomVenueCapacity() : 500;
+            venue = venueRepository.save(new Venue(dto.getCustomVenueName().trim(), city, capacity));
+        } else if (dto.getVenueId() != null) {
+            venue = venueRepository.findById(dto.getVenueId())
+                    .orElseThrow(() -> new IllegalArgumentException("Venue not found with ID: " + dto.getVenueId()));
+        } else {
+            throw new IllegalArgumentException("Please select an existing venue or type a custom venue name.");
+        }
 
         Event event = new Event(dto.getTitle(), dto.getBasePrice(), dto.getEventDate(), venue);
         return eventRepository.save(event);

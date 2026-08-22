@@ -23,8 +23,10 @@ public class EventCreateDTO {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime eventDate;
 
-    @NotNull(message = "Please select a venue.")
-    private Long venueId;
+    private Long venueId; // Optional if typing a new venue
+    private String customVenueName;
+    private String customVenueCity;
+    private Integer customVenueCapacity;
 
     public EventCreateDTO() {}
 
@@ -36,4 +38,10 @@ public class EventCreateDTO {
     public void setEventDate(LocalDateTime eventDate) { this.eventDate = eventDate; }
     public Long getVenueId() { return venueId; }
     public void setVenueId(Long venueId) { this.venueId = venueId; }
+    public String getCustomVenueName() { return customVenueName; }
+    public void setCustomVenueName(String customVenueName) { this.customVenueName = customVenueName; }
+    public String getCustomVenueCity() { return customVenueCity; }
+    public void setCustomVenueCity(String customVenueCity) { this.customVenueCity = customVenueCity; }
+    public Integer getCustomVenueCapacity() { return customVenueCapacity; }
+    public void setCustomVenueCapacity(Integer customVenueCapacity) { this.customVenueCapacity = customVenueCapacity; }
 }

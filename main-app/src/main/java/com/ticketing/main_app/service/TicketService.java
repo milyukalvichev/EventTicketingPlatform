@@ -33,28 +33,9 @@ public class TicketService {
         this.pricingRestClient = pricingRestClient;
     }
 
-    public Ticket purchaseTicket(String username, Long eventId, String promoCode) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found with ID: " + eventId));
-
-        BigDecimal finalPrice = calculateFinalPrice(event.getBasePrice(), promoCode);
-
-        Ticket ticket = new Ticket(
-                finalPrice,
-                (promoCode != null && !promoCode.isBlank()) ? promoCode.trim().toUpperCase() : null,
-                LocalDateTime.now(),
-                user,
-                event
-        );
-
-        return ticketRepository.save(ticket);
-    }
-
-    public BigDecimal calculateFinalPrice(BigDecimal basePrice, String promoCode) {
+    public PromoEvaluationResult evaluatePromo(BigDecimal basePrice, String promoCode) {
         if (promoCode == null || promoCode.isBlank()) {
-            return basePrice;
+            return new PromoEvaluationResult(basePrice, false, null);
         }
 
         try {
@@ -64,17 +45,37 @@ public class TicketService {
                     .body(PromoResponseDTO.class);
 
             if (response != null && response.isValid()) {
-                BigDecimal discountPercentage = response.getDiscountPercentage();
-                BigDecimal discountFactor = discountPercentage.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
-                BigDecimal discountAmount = basePrice.multiply(discountFactor);
-                return basePrice.subtract(discountAmount).setScale(2, RoundingMode.HALF_UP);
+                BigDecimal factor = response.getDiscountPercentage().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
+                BigDecimal discount = basePrice.multiply(factor);
+                BigDecimal finalPrice = basePrice.subtract(discount).setScale(2, RoundingMode.HALF_UP);
+                return new PromoEvaluationResult(finalPrice, true, response.getMessage());
+            } else if (response != null) {
+                return new PromoEvaluationResult(basePrice, false, response.getMessage());
             }
         } catch (Exception e) {
-            // Fallback: charge base price if pricing microservice is temporarily unavailable
-            return basePrice;
+            return new PromoEvaluationResult(basePrice, false, "Pricing service unavailable. Base price applied.");
         }
 
-        return basePrice;
+        return new PromoEvaluationResult(basePrice, false, "Invalid promotional code.");
+    }
+
+    public Ticket purchaseTicket(String username, Long eventId, String promoCode) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found with ID: " + eventId));
+
+        PromoEvaluationResult result = evaluatePromo(event.getBasePrice(), promoCode);
+
+        Ticket ticket = new Ticket(
+                result.finalPrice(),
+                result.valid() ? promoCode.trim().toUpperCase() : null,
+                LocalDateTime.now(),
+                user,
+                event
+        );
+
+        return ticketRepository.save(ticket);
     }
 
     public List<Ticket> getUserTickets(String username) {
@@ -82,4 +83,6 @@ public class TicketService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
         return ticketRepository.findByUserIdOrderByPurchaseDateDesc(user.getId());
     }
+
+    public record PromoEvaluationResult(BigDecimal finalPrice, boolean valid, String message) {}
 }
