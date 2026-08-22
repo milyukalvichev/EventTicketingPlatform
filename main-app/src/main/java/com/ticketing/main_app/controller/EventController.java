@@ -54,4 +54,41 @@ public class EventController {
         eventService.createEvent(eventCreateDTO);
         return "redirect:/events?created=true";
     }
+
+    @GetMapping("/edit/{id}")
+    public String showEditForm(@PathVariable Long id, Model model) {
+        Event event = eventService.getEventById(id);
+
+        EventCreateDTO dto = new EventCreateDTO();
+        dto.setTitle(event.getTitle());
+        dto.setBasePrice(event.getBasePrice());
+        dto.setEventDate(event.getEventDate());
+        dto.setVenueId(event.getVenue().getId());
+
+        model.addAttribute("eventCreateDTO", dto);
+        model.addAttribute("eventId", id);
+        model.addAttribute("venues", eventService.getAllVenues());
+        return "event-edit";
+    }
+
+    @PostMapping("/edit/{id}")
+    public String updateEvent(@PathVariable Long id,
+                              @Valid @ModelAttribute("eventCreateDTO") EventCreateDTO eventCreateDTO,
+                              BindingResult bindingResult,
+                              Model model) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("eventId", id);
+            model.addAttribute("venues", eventService.getAllVenues());
+            return "event-edit";
+        }
+
+        eventService.updateEvent(id, eventCreateDTO);
+        return "redirect:/events?updated=true";
+    }
+
+    @PostMapping("/delete/{id}")
+    public String deleteEvent(@PathVariable Long id) {
+        eventService.deleteEvent(id);
+        return "redirect:/events?deleted=true";
+    }
 }

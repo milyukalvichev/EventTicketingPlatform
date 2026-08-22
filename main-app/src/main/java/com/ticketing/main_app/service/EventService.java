@@ -60,4 +60,34 @@ public class EventService {
         }
         return eventRepository.searchEvents(query.trim());
     }
+
+    public Event updateEvent(Long id, EventCreateDTO dto) {
+        Event existingEvent = getEventById(id);
+
+        existingEvent.setTitle(dto.getTitle());
+        existingEvent.setBasePrice(dto.getBasePrice());
+        existingEvent.setEventDate(dto.getEventDate());
+
+        if (dto.getCustomVenueName() != null && !dto.getCustomVenueName().isBlank()) {
+            String city = (dto.getCustomVenueCity() != null && !dto.getCustomVenueCity().isBlank())
+                    ? dto.getCustomVenueCity() : "Sofia";
+            int capacity = (dto.getCustomVenueCapacity() != null && dto.getCustomVenueCapacity() > 0)
+                    ? dto.getCustomVenueCapacity() : 500;
+            Venue venue = venueRepository.save(new Venue(dto.getCustomVenueName().trim(), city, capacity));
+            existingEvent.setVenue(venue);
+        } else if (dto.getVenueId() != null) {
+            Venue venue = venueRepository.findById(dto.getVenueId())
+                    .orElseThrow(() -> new IllegalArgumentException("Venue not found with ID: " + dto.getVenueId()));
+            existingEvent.setVenue(venue);
+        }
+
+        return eventRepository.save(existingEvent);
+    }
+
+    public void deleteEvent(Long id) {
+        if (!eventRepository.existsById(id)) {
+            throw new IllegalArgumentException("Cannot delete: Event not found with ID: " + id);
+        }
+        eventRepository.deleteById(id);
+    }
 }
