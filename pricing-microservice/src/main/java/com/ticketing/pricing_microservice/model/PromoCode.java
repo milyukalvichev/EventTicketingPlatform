@@ -53,7 +53,7 @@ public class PromoCode {
         this.discountPercentage = discountPercentage;
     }
 
-    public Boolean getActive() {
+    public Boolean isActive() {
         return active;
     }
 
@@ -68,4 +68,6 @@ public class PromoCode {
     public void setExpirationDate(LocalDate expirationDate) {
         this.expirationDate = expirationDate;
     }
+
+
 }
