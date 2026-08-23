@@ -70,6 +70,19 @@ public class TicketService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found with ID: " + eventId));
 
+        // Calculate real-time remaining capacity
+        int totalCapacity = event.getVenue().getCapacity();
+        int currentSold = event.getTickets() != null ? event.getTickets().size() : 0;
+        int remainingCapacity = totalCapacity - currentSold;
+
+        if (quantity > remainingCapacity) {
+            throw new IllegalArgumentException(
+                    remainingCapacity <= 0
+                            ? "This event is completely SOLD OUT."
+                            : "Only " + remainingCapacity + " ticket(s) remaining for this event."
+            );
+        }
+
         PromoEvaluationResult result = evaluatePromo(event.getBasePrice(), promoCode);
 
         List<Ticket> purchasedTickets = new ArrayList<>();

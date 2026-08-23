@@ -31,15 +31,25 @@ public class TicketController {
                                @RequestParam(defaultValue = "1") int quantity,
                                Model model) {
         Event event = eventService.getEventById(eventId);
+        int remaining = eventService.getRemainingCapacity(eventId);
+
+        if (remaining <= 0) {
+            return "redirect:/events/" + eventId + "?soldout=true";
+        }
+
+        int maxSelectable = Math.min(10, remaining);
+        int validQty = Math.max(1, Math.min(maxSelectable, quantity));
+
         TicketService.PromoEvaluationResult eval = ticketService.evaluatePromo(event.getBasePrice(), promoCode);
 
-        int validQty = Math.max(1, Math.min(10, quantity));
         BigDecimal unitPrice = eval.finalPrice();
         BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(validQty));
         BigDecimal totalOriginalPrice = event.getBasePrice().multiply(BigDecimal.valueOf(validQty));
         BigDecimal totalDiscount = totalOriginalPrice.subtract(totalPrice);
 
         model.addAttribute("event", event);
+        model.addAttribute("remainingCapacity", remaining);
+        model.addAttribute("maxSelectable", maxSelectable);
         model.addAttribute("promoCode", promoCode != null ? promoCode : "");
         model.addAttribute("quantity", validQty);
         model.addAttribute("unitPrice", unitPrice);

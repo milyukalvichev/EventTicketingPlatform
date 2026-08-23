@@ -90,4 +90,15 @@ public class EventService {
         }
         eventRepository.deleteById(id);
     }
+
+    public int getRemainingCapacity(Long eventId) {
+        Event event = getEventById(eventId);
+        int totalCapacity = event.getVenue().getCapacity();
+        int soldTickets = event.getTickets() != null ? event.getTickets().size() : 0;
+        return Math.max(0, totalCapacity - soldTickets);
+    }
+
+    public boolean isSoldOut(Long eventId) {
+        return getRemainingCapacity(eventId) <= 0;
+    }
 }

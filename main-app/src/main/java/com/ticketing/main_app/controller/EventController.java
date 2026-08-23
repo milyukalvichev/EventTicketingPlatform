@@ -9,6 +9,8 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Controller
 @RequestMapping("/events")
 public class EventController {
@@ -21,7 +23,9 @@ public class EventController {
 
     @GetMapping
     public String listEvents(@RequestParam(required = false) String search, Model model) {
-        model.addAttribute("events", eventService.searchEvents(search));
+        List<Event> events = eventService.searchEvents(search);
+        model.addAttribute("events", events);
+        model.addAttribute("eventService", eventService); // Helper for inline template calculation
         model.addAttribute("searchQuery", search != null ? search : "");
         return "events";
     }
@@ -30,6 +34,7 @@ public class EventController {
     public String eventDetails(@PathVariable Long id, Model model) {
         Event event = eventService.getEventById(id);
         model.addAttribute("event", event);
+        model.addAttribute("remainingCapacity", eventService.getRemainingCapacity(id));
         return "event-details";
     }
 

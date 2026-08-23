@@ -43,7 +43,12 @@
         <div class="col" th:each="event : ${events}">
             <div class="card h-100 shadow-sm border-0">
                 <div class="card-body d-flex flex-column">
-                    <h5 class="card-title fw-bold text-primary mb-2" th:text="${event.title}">Event Title</h5>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title fw-bold text-primary mb-0" th:text="${event.title}">Event Title</h5>
+                        <span th:if="${eventService.getRemainingCapacity(event.id) > 0}" class="badge bg-info text-dark" th:text="${eventService.getRemainingCapacity(event.id) + ' left'}"></span>
+                        <span th:if="${eventService.getRemainingCapacity(event.id) == 0}" class="badge bg-danger">SOLD OUT</span>
+                    </div>
+
                     <p class="card-text text-muted mb-1">📍 <span th:text="${event.venue.name + ', ' + event.venue.city}">Venue, City</span></p>
                     <p class="card-text text-secondary mb-3">📅 <span th:text="${#temporals.format(event.eventDate, 'MMM dd, yyyy - HH:mm')}">Date</span></p>
 
@@ -51,7 +56,8 @@
                         <span class="fs-5 fw-bold text-dark">€<span th:text="${#numbers.formatDecimal(event.basePrice, 1, 2)}">0.00</span></span>
                         <div class="btn-group">
                             <a th:href="@{/events/{id}(id=${event.id})}" class="btn btn-outline-primary btn-sm">Details</a>
-                            <a th:href="@{/tickets/checkout/{id}(id=${event.id})}" class="btn btn-success btn-sm fw-semibold">Book</a>
+                            <a th:if="${eventService.getRemainingCapacity(event.id) > 0}" th:href="@{/tickets/checkout/{id}(id=${event.id})}" class="btn btn-success btn-sm fw-semibold">Book</a>
+                            <button th:if="${eventService.getRemainingCapacity(event.id) == 0}" class="btn btn-secondary btn-sm" disabled>Sold Out</button>
                         </div>
                     </div>
                 </div>
